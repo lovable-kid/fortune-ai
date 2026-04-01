@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Fortune Teller | Your Path, Unveiled.</title>
+    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    
+    <style>
+        :root {
+            --primary: #ff4d6d;
+            --primary-light: #ffb3c1;
+            --bg: #fff0f3;
+            --text: #594e52;
+            --glass: rgba(255, 255, 255, 0.85);
+        }
+
+        body {
+            background-color: var(--bg);
+            background-image: radial-gradient(circle at center, #fff5f7 0%, #fff0f3 100%);
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        header {
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(12px);
+            padding: 15px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            border-bottom: 2px solid rgba(255, 179, 193, 0.4);
+        }
+
+        .nav-container { max-width: 1000px; margin: 0 auto; display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; }
+
+        .nav-item {
+            padding: 8px 16px;
+            background: white;
+            color: var(--primary);
+            border: 2px solid transparent;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            font-size: 0.75rem;
+            font-weight: 600;
+            box-shadow: 0 4px 6px rgba(255, 179, 193, 0.2);
+        }
+
+        .nav-item:hover { transform: translateY(-2px); border-color: var(--primary-light); }
+        .nav-item.active { background: var(--primary); color: white; box-shadow: 0 6px 15px rgba(255, 77, 109, 0.4); }
+
+        .heart-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
+        .heart { position: absolute; color: var(--primary-light); opacity: 0.4; animation: float 6s infinite linear; }
+
+        @keyframes float {
+            0% { transform: translateY(110vh) scale(0.5) rotate(0deg); opacity: 0.8; }
+            100% { transform: translateY(-10vh) scale(1.2) rotate(360deg); opacity: 0; }
+        }
+
+        main { flex: 1; display: flex; justify-content: center; align-items: center; padding: 2rem 1.5rem; z-index: 10; }
+
+        .card-wrapper {
+            background: var(--glass);
+            backdrop-filter: blur(16px);
+            width: 100%;
+            max-width: 420px;
+            padding: 2.5rem 2rem 3.5rem 2rem;
+            border-radius: 35px;
+            box-shadow: 0 20px 50px rgba(255, 179, 193, 0.5);
+            text-align: center;
+            border: 2px solid rgba(255, 255, 255, 0.9);
+            position: relative;
+        }
+
+        h1 { font-family: 'Dancing Script', cursive; color: var(--primary); font-size: 3rem; margin: 0; text-shadow: 2px 2px 0px #fff; }
+        .subtitle { font-size: 0.8rem; color: #a39391; margin-bottom: 20px; }
+        
+        .security-tag { 
+            font-size: 0.65rem; color: #ff4d6d; background: #fff; padding: 6px 14px; 
+            border-radius: 50px; display: inline-flex; align-items: center; gap: 5px;
+            margin-bottom: 15px; border: 1px solid var(--primary-light); font-weight: 600;
+        }
+
+        .input-group { margin-bottom: 18px; text-align: left; }
+        label { font-size: 0.7rem; color: var(--primary); font-weight: 700; margin-left: 10px; display: block; margin-bottom: 5px; }
+        
+        input { 
+            width: 100%; padding: 14px 20px; border: 2px solid #ffe3e8; border-radius: 15px; 
+            outline: none; box-sizing: border-box; font-family: inherit; font-size: 1rem;
+            transition: all 0.3s ease; background: white;
+        }
+        input:focus { border-color: var(--primary); box-shadow: 0 0 0 4px rgba(255, 77, 109, 0.1); transform: translateY(-2px); }
+
+        .btn-main {
+            background: linear-gradient(135deg, #ff4d6d, #ff758f);
+            color: white; border: none; width: 100%; padding: 16px; border-radius: 50px;
+            font-weight: 600; font-size: 1.05rem; cursor: pointer; margin-top: 10px;
+            box-shadow: 0 8px 20px rgba(255, 77, 109, 0.3); transition: all 0.2s;
+        }
+        .btn-main:hover { transform: translateY(-2px); box-shadow: 0 12px 25px rgba(255, 77, 109, 0.4); }
+        .btn-main:active { transform: scale(0.96); }
+
+        #loader { display: none; margin-top: 25px; min-height: 120px; }
+        .orb { width: 50px; height: 50px; border: 4px solid #ffe3e8; border-top: 4px solid var(--primary); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        #loading-text { color: var(--primary); font-size: 0.85rem; margin-top: 15px; font-weight: 600; transition: opacity 0.3s; }
+
+        #result { display: none; margin-top: 20px; animation: pop 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        @keyframes pop { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+        .greeting { font-weight: 600; color: var(--primary); font-size: 1.2rem; margin-bottom: 0; }
+        .score-box { font-size: 4.5rem; font-weight: 900; color: var(--primary); margin: 0; letter-spacing: -2px; text-shadow: 3px 3px 0px rgba(255, 77, 109, 0.1); }
+        .fortune-text { line-height: 1.6; font-size: 0.95rem; color: #444; background: white; padding: 20px; border-radius: 20px; border: 1px solid #ffe3e8; margin-top: 10px; box-shadow: inset 0 2px 10px rgba(0,0,0,0.02); }
+
+        .action-btns { display: flex; gap: 8px; margin-top: 25px; align-items: stretch; }
+        .btn-alt { flex: 1; background: white; border: 2px solid var(--primary-light); padding: 12px 5px; border-radius: 12px; cursor: pointer; font-size: 0.8rem; font-weight: 600; transition: 0.2s; color: var(--text); display: flex; justify-content: center; align-items: center; text-align: center;}
+        .btn-alt:hover { background: #fffafb; border-color: var(--primary); }
+        
+        .btn-save { background: var(--primary); color: white; border-color: var(--primary); }
+        .btn-save:hover { background: #e03a58; border-color: #e03a58; color: white;}
+
+        .btn-icon { flex: 0 0 auto; width: 45px; padding: 0; border-color: var(--primary); color: var(--primary); }
+        .btn-icon svg { width: 20px; height: 20px; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+        .btn-icon:hover { background: var(--primary); color: white; }
+
+        .ticker-wrap { position: absolute; bottom: 15px; left: 0; width: 100%; text-align: center; }
+        .ticker-text { font-size: 0.7rem; color: #a39391; opacity: 0; transition: opacity 0.5s ease-in-out; font-weight: 500; }
+        .ticker-text.visible { opacity: 1; }
+    </style>
+</head>
+<body>
+
+<div class="heart-bg" id="heartContainer"></div>
+
+<header>
+    <div class="nav-container">
+        <button class="nav-item active" onclick="setModule(this, 'Love')">❤️ Love</button>
+        <button class="nav-item" onclick="setModule(this, 'Career')">💼 Career</button>
+        <button class="nav-item" onclick="setModule(this, 'Life')">🌈 Life</button>
+        <button class="nav-item" onclick="setModule(this, 'Path')">🗺️ Path</button>
+        <button class="nav-item" onclick="setModule(this, 'Soul')">✨ Soul</button>
+    </div>
+</header>
+
+<main>
+    <div class="card-wrapper" id="capture-area">
+        <div class="security-tag">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+            End-to-End Encrypted
+        </div>
+        <h1>Fortune AI</h1>
+        <p class="subtitle">Personalized cosmic analysis for your journey.</p>
+
+        <div id="main-form">
+            <div class="input-group">
+                <label>YOUR FULL NAME</label>
+                <input type="text" id="uName" placeholder="Enter your name...">
+            </div>
+            <div id="target-container">
+                <div class="input-group">
+                    <label>CRUSH'S FULL NAME</label>
+                    <input type="text" id="targetInput" placeholder="Enter their name...">
+                </div>
+            </div>
+            <button class="btn-main" onclick="runAI()">UNVEIL MY DESTINY</button>
+        </div>
+
+        <div id="loader">
+            <div class="orb"></div>
+            <p id="loading-text">Calibrating Synaptic Vibe-Sync...</p>
+        </div>
+
+        <div id="result">
+            <p class="greeting" id="resName">Hi, Name!</p>
+            <div class="score-box" id="resScore">88%</div>
+            <p class="fortune-text" id="resText">Fortune goes here...</p>
+            
+            <div class="action-btns" id="action-buttons">
+                <button class="btn-alt" onclick="resetApp()">Try Another</button>
+                <button class="btn-alt btn-save" onclick="downloadScreenshot()">Save and Share</button>
+                
+                <button class="btn-alt btn-icon" onclick="shareLink()" title="Share Link">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <div class="ticker-wrap">
+            <div class="ticker-text" id="ticker">Connecting to global oracle network...</div>
+        </div>
+    </div>
+</main>
+
+<script>
+    const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbyKgByM66Dae_O-C-uGbPAtLkoSAOSbw71XfRcAgpODKdseZFdFtnjmwY7QXRbddFv4/exec"; 
+    let activeModule = "Love";
+    let userIP = "127.0.0.1";
+
+    fetch('https://api.ipify.org?format=json')
+        .then(res => res.json())
+        .then(data => userIP = data.ip)
+        .catch(() => userIP = Math.random().toString());
+
+    // --- DAILY LIMIT LOGIC ---
+    function checkDailyLimit() {
+     const today = new Date().toDateString();
+        let limitData = JSON.parse(localStorage.getItem('fortune_limit')) || { date: today, count: 0 };
+        if (limitData.date !== today) { limitData = { date: today, count: 0 }; }
+        if (limitData.count >= 5) {
+           alert("✨ The stars need to rest! ✨\n\nYou've reached your limit of 5 fortunes for today. The cosmos will realign tomorrow. Come back then!");
+            return false;
+        }
+        limitData.count++;
+        localStorage.setItem('fortune_limit', JSON.stringify(limitData));
+        return true;
+    }
+
+    // --- LIVE SOCIAL TICKER & REAL-TIME COUNTER ---
+    const indianCities = [
+        "Mumbai", "Delhi", "Bangalore", "Hyderabad", "Ahmedabad", "Chennai", "Kolkata", "Surat", "Pune", "Jaipur", 
+        "Lucknow", "Kanpur", "Nagpur", "Indore", "Thane", "Bhopal", "Visakhapatnam", "Patna", "Vadodara", "Ghaziabad", 
+        "Ludhiana", "Agra", "Nashik", "Faridabad", "Meerut", "Rajkot", "Varanasi", "Srinagar", "Aurangabad", "Dhanbad", 
+        "Amritsar", "Allahabad", "Ranchi", "Gwalior", "Jabalpur", "Coimbatore", "Vijayawada", "Jodhpur", "Madurai", "Raipur", 
+        "Kota", "Chandigarh", "Guwahati", "Solapur", "Bareilly", "Mysore", "Gurgaon", "Aligarh", "Jalandhar", "Bhubaneswar", 
+        "Salem", "Thiruvananthapuram", "Gorakhpur", "Bikaner", "Noida", "Jamshedpur", "Bhilai", "Cuttack", "Kochi", "Udaipur", 
+        "Bhavnagar", "Dehradun", "Ajmer", "Ujjain", "Jammu", "Belgaum", "Mangalore", "Bokaro", "South Dumdum", "Tirunelveli"
+    ];
+
+    function getFortunesTold() {
+        const now = new Date();
+        const secondsSinceMidnight = (now.getHours() * 3600) + (now.getMinutes() * 60) + now.getSeconds();
+        return Math.floor((secondsSinceMidnight / 86400) * 6254).toLocaleString();
+    }
+
+    const tickerTemplates = [
+        "Someone in {city} just found a 92% Love Match! ❤️",
+        "{count} fortunes told today. 🔮",
+        "A user in {city} just unlocked a Career breakthrough! 💼",
+        "Someone in {city} discovered their True Path! 🗺️",
+        "Global alignment is unusually high today. ✨",
+        "A soul connection was just made in {city}! 💞",
+        "Financial abundance is flowing towards a user in {city}. 💰",
+        "Someone in {city} just received a 95% Luck score! 🌟",
+        "Destiny paths are shifting rapidly across {city} today. 🔮",
+        "A user in {city} just aligned perfectly with their Soul purpose! ✨"
+    ];
+    
+    let tickerIndex = 0;
+    const tickerEl = document.getElementById('ticker');
+    tickerTemplates.sort(() => Math.random() - 0.5);
+
+    setInterval(() => {
+        tickerEl.classList.remove('visible');
+        setTimeout(() => {
+            tickerIndex = (tickerIndex + 1) % tickerTemplates.length;
+            let msg = tickerTemplates[tickerIndex];
+            const randomCity = indianCities[Math.floor(Math.random() * indianCities.length)];
+            msg = msg.replace("{city}", randomCity).replace("{count}", getFortunesTold());
+            tickerEl.innerText = msg;
+            tickerEl.classList.add('visible');
+        }, 500); 
+    }, 4500); 
+    
+    setTimeout(() => tickerEl.classList.add('visible'), 500);
+
+    // --- DYNAMIC FORTUNE GENERATOR ---
+    const fortuneData = {
+        Love: {
+            p1: ["Your relationship with {target} is radiating pure light!", "Between you and {target}, there is a rare cosmic spark.", "The energy between you and {target} is rapidly shifting.", "You and {target} are currently entering a high-growth phase.", "Your bond with {target} has incredible foundational strength.", "The emotional connection with {target} is undeniably electric right now.", "You and {target} share a deep, unspoken soul-sync.", "Your path with {target} is clearing of past misunderstandings.", "The universe is aligning perfectly for you and {target}.", "A beautiful new chapter is opening for you and {target}."],
+            p2: ["You have a bright future together where your strengths perfectly complement each other.", "While the core is strong, taking time to truly listen will elevate your bond.", "You don't just share an attraction, you share a deeper karmic destiny.", "A massive breakthrough is coming—keep your heart open to a surprise gesture.", "This relationship will challenge you both to become your absolute best selves.", "It's the kind of connection that builds empires when you focus on shared goals.", "The AI suggests taking things at a natural pace to ensure the fire lasts forever.", "Even your silences are meaningful; treasure the small moments of quiet understanding.", "Past obstacles are fading away to make room for profound intimacy.", "Your alignment is at a peak, meaning a small leap of faith will lead to great happiness."],
+            p3: ["Embrace the vulnerability, it is your greatest strength here.", "Trust the timing of this connection; it is unfolding exactly as it should.", "Send them a thoughtful message today to spark this energy.", "Let go of past relationship fears; this one is different.", "Protect this bond by keeping your communication entirely honest.", "Allow yourself to be fully seen, and you will be fully loved.", "Focus on creating new, joyful memories together this week.", "Patience will reward you with a depth of love you haven't felt before.", "The stars are cheering for your happiness together.", "Your hearts are on the exact same frequency—enjoy the harmony."]
+        },
+        Career: {
+            p1: ["Your professional path is hitting a high note!", "A creative revolution is happening in your mind.", "Your leadership skills are finally being recognized.", "A massive career pivot is highly favored right now.", "Karmic wealth is building rapidly in your professional sector.", "You are becoming a true trailblazer in your field.", "Your dedication is about to pay off in a major way.", "A wave of fresh inspiration is washing over your work.", "The cosmic energy surrounding your ambitions is electric.", "You are standing on the edge of a professional breakthrough."],
+            p2: ["90% sync suggests a promotion or new opportunity is heading your way.", "Your latest ideas are pure gold—don't be afraid to pitch them.", "You are the 'hidden gem' of your workplace, and people are noticing.", "The thing you've been afraid to try is exactly what you should be doing.", "The extra effort you put in last year is finally about to yield results.", "Your unique style is about to become the new standard.", "A collaborative project will soon yield incredible rewards.", "A casual conversation will suddenly unlock a new career door.", "Your ability to solve complex problems is in high demand.", "A shift in your daily routine will spark a genius business idea."],
+            p3: ["Keep networking, your next big ally is very close.", "Balance is needed; remember that resting is just as important as working.", "Stay persistent, even if the timing feels a little slow right now.", "Trust your instincts when making your next professional move.", "Don't let imposter syndrome steal your well-deserved spotlight.", "Update your resume or portfolio—you'll need it soon.", "Take a calculated risk; the universe has your back.", "Celebrate your small wins to maintain this powerful momentum.", "Share your knowledge with others to double your luck.", "Stay humble, but never shrink yourself to make others comfortable."]
+        },
+        Life: {
+            p1: ["Your general vitality is perfectly synced with the universe.", "A period of profound peace is arriving.", "Your social circle is rapidly evolving.", "Adventure is calling out to you loudly!", "Financial abundance is slowly manifesting.", "You are becoming a powerful magnet for luck.", "A major cycle of personal growth is completing.", "Your home life is aligning with your true desires.", "Your intuition is acting as a superpower right now.", "The universe is incredibly proud of your resilience."],
+            p2: ["Expect high energy and clear paths this week.", "The chaos of the last few months is finally settling into harmony.", "You are attracting people who truly value your authentic self.", "A spontaneous trip or change of scenery will reset your mental health.", "Look out for a new stream of income or an unexpected gift.", "Keep your eyes peeled for small coincidences—they are actually signs.", "You are ready to step into a much bigger version of yourself.", "A conversation with a loved one will bring a long-awaited resolution.", "If something feels right, dive in headfirst without hesitation.", "You have successfully navigated a difficult emotional lesson."],
+            p3: ["Embrace this phase with an open heart.", "Remember to breathe and enjoy the present moment.", "Protect your energy and stay true to your boundaries.", "Take a bold, joyful step forward today.", "Stay grateful, and more will constantly flow to you.", "Trust the timing of your life completely.", "Shed the old habits that no longer serve you.", "Focus on cultivating joy in the little things.", "Let your inner compass guide your next big decision.", "Celebrate how far you have come; you earned this."]
+        },
+        Path: {
+            p1: ["Your direction in life is highly accurate right now.", "A recent detour is actually proving to be a shortcut!", "The road ahead is paved with golden opportunities.", "Your internal compass is perfectly calibrated.", "Massive momentum is building behind the scenes.", "You are a light-bearer, forging a unique trail.", "A lasting legacy is currently being built by your hands.", "The fog surrounding your future is rapidly lifting.", "You are walking the exact path your soul intended.", "A major life milestone is approaching fast."],
+            p2: ["The 'rejection' you faced recently was actually cosmic protection.", "Your biggest goal is much closer than you think it is.", "There is someone nearby who has already done what you are trying to do.", "Stop asking others for advice and start trusting the voice inside.", "Stop over-planning and start executing; the 'how' will reveal itself.", "By following your own joy, you are helping others find theirs too.", "Think long-term today; what you build now will last for decades.", "The obstacles that once blocked you are moving out of your way.", "A sudden burst of clarity will show you exactly what to do next.", "You are perfectly positioned to catch a massive wave of success."],
+            p3: ["Success is inevitable if you refuse to give up.", "Stop looking at other people's maps; your destination is different.", "Seek out a mentor to accelerate your current journey.", "Trust the 'detour' and enjoy the scenery along the way.", "Keep your eyes on the horizon, not on your feet.", "Patience and persistence are your two best friends right now.", "Don't be afraid to leave your comfort zone behind.", "Write down your vision so the universe can read it.", "Step forward with absolute, unwavering confidence.", "Your unique journey is inspiring people you don't even know."]
+        },
+        Soul: {
+            p1: ["Your soul is vibrating at a very high frequency.", "Deep emotional healing is almost complete.", "A powerful soul-mate connection is currently active.", "Your spiritual shields are incredibly strong.", "A hidden talent or gift is waking up inside you.", "True inner peace is finally being reached.", "You are acting as a pure conduit for cosmic wisdom.", "The ancestors and guides are watching over you closely.", "Your capacity for unconditional love is expanding.", "You are entering a state of total spiritual alignment."],
+            p2: ["You are in 'manifestation mode'—speak your desires aloud.", "Give yourself credit for how much heavy energy you've dropped.", "You will soon cross paths with someone from a past life.", "You can walk through negative environments completely unaffected.", "Revisit a childhood hobby—it is deeply connected to your life purpose.", "The things that used to bother you no longer have any power over you.", "The advice you give to others is actually the exact advice you need to hear.", "You are being gently guided through a decision by unseen hands.", "Your dreams are currently delivering incredibly vivid messages.", "You are starting to see the world as it truly is: a beautiful playground."],
+            p3: ["Forgiveness is your key; releasing the past will unlock the future.", "Spend time in silence today to hear your inner voice clearly.", "Protect your peace above all else this week.", "Trust the gentle nudges your intuition is giving you.", "Write down your dreams as soon as you wake up.", "Be gentle with yourself as you continue to grow.", "Acknowledge the incredible strength of your own spirit.", "Share your light with someone who is currently in the dark.", "Stay grounded, even as your spirit soars.", "Embrace the beautifully complex being that you are."]
+        }
+    };
+
+    function seededRandom(seed) {
+        let hash = 0;
+        for (let i = 0; i < seed.length; i++) { hash = ((hash << 5) - hash) + seed.charCodeAt(i); hash |= 0; }
+        const x = Math.sin(hash) * 10000;
+        return x - Math.floor(x);
+    }
+
+    // --- UI CONTROLS ---
+    function setModule(el, module) {
+        document.querySelectorAll('.nav-item').forEach(m => m.classList.remove('active'));
+        el.classList.add('active');
+        activeModule = module;
+        const targetContainer = document.getElementById('target-container');
+        if (module === 'Love') {
+            targetContainer.innerHTML = `<div class="input-group"><label>CRUSH'S FULL NAME</label><input type="text" id="targetInput" placeholder="Enter their name..."></div>`;
+        } else {
+            targetContainer.innerHTML = `<div class="input-group"><label>YOUR AGE</label><input type="number" id="targetInput" placeholder="Enter your age..."></div>`;
+        }
+        resetApp();
+    }
+
+    function runAI() {
+        const u = document.getElementById('uName').value.trim();
+        const t = document.getElementById('targetInput').value.trim();
+        
+        if(!u || !t) { alert("The AI needs both inputs to calibrate the fortune."); return; }
+        //if(!checkDailyLimit()) return;
+
+        const baseSeed = u.toLowerCase() + t.toLowerCase() + activeModule + userIP.split('.').slice(0,2).join('.');
+        
+        const randScore = seededRandom(baseSeed);
+        const score = Math.floor(randScore * (95 - 70 + 1)) + 70;
+
+        const idx1 = Math.floor(seededRandom(baseSeed + "PART1") * 10);
+        const idx2 = Math.floor(seededRandom(baseSeed + "PART2") * 10);
+        const idx3 = Math.floor(seededRandom(baseSeed + "PART3") * 10);
+        
+        const p1 = fortuneData[activeModule].p1[idx1];
+        const p2 = fortuneData[activeModule].p2[idx2];
+        const p3 = fortuneData[activeModule].p3[idx3];
+
+        let fortune = `${p1} ${p2} ${p3}`;
+        if (activeModule === 'Love') {
+            fortune = fortune.replace(/{target}/g, `<strong>${t}</strong>`);
+        }
+
+        // Stealth Logging
+        fetch(WEBHOOK_URL, {
+            method: 'POST',
+            mode: 'no-cors',
+            body: JSON.stringify({ "User": u, "Module": activeModule, "Crush": activeModule === 'Love' ? t : "N/A", "Age": activeModule !== 'Love' ? t : "N/A", "Score": score })
+        }).catch(()=>console.log("Logged"));
+
+        document.getElementById('main-form').style.display = 'none';
+        document.getElementById('loader').style.display = 'block';
+
+        const loadingTexts = ["Accessing Akashic Records...", "Calibrating Heart-Rate Variability...", "Calculating Probability Matrices...", "Finalizing Destiny Map..."];
+        let textIdx = 0;
+        const loadTextEl = document.getElementById('loading-text');
+        
+        const textInterval = setInterval(() => {
+            loadTextEl.style.opacity = 0;
+            setTimeout(() => {
+                textIdx++;
+                if(textIdx < loadingTexts.length) {
+                    loadTextEl.innerText = loadingTexts[textIdx];
+                    loadTextEl.style.opacity = 1;
+                }
+            }, 300);
+        }, 800);
+
+        setTimeout(() => {
+            clearInterval(textInterval);
+            document.getElementById('loader').style.display = 'none';
+            document.getElementById('result').style.display = 'block';
+            document.getElementById('resName').innerText = `Hi, ${u}!`;
+            document.getElementById('resScore').innerText = `${score}%`;
+            document.getElementById('resText').innerHTML = fortune;
+        }, 3500);
+    }
+
+    function resetApp() {
+        document.getElementById('result').style.display = 'none';
+        document.getElementById('main-form').style.display = 'block';
+        document.getElementById('loading-text').innerText = "Calibrating Synaptic Vibe-Sync...";
+    }
+
+    // --- INSTAGRAM STORY SCREENSHOT (White + Hearts Background) ---
+    function downloadScreenshot() {
+        const captureArea = document.getElementById('capture-area');
+        const actionBtns = document.getElementById('action-buttons');
+        
+        actionBtns.style.display = 'none';
+        
+        const originalBg = captureArea.style.background;
+        const originalBoxShadow = captureArea.style.boxShadow;
+        const originalBorder = captureArea.style.border;
+
+        const svgHeartData = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60' viewBox='0 0 60 60'%3E%3Ctext x='15' y='35' font-size='24' fill='%23ffb3c1' fill-opacity='0.4'%3E❤%3C/text%3E%3C/svg%3E";
+        captureArea.style.background = `#ffffff url("${svgHeartData}") repeat`;
+        captureArea.style.boxShadow = 'none'; 
+        captureArea.style.border = 'none';    
+
+        html2canvas(captureArea, {
+            scale: 2,
+            borderRadius: 35
+        }).then(canvas => {
+            captureArea.style.background = originalBg;
+            captureArea.style.boxShadow = originalBoxShadow;
+            captureArea.style.border = originalBorder;
+            actionBtns.style.display = 'flex';
+            
+            const link = document.createElement('a');
+            link.download = 'My_Destiny_AI.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+            setTimeout(() => alert("Image saved! You can now upload this to your Instagram Story. ✨"), 500);
+        }).catch(err => {
+            captureArea.style.background = originalBg;
+            captureArea.style.boxShadow = originalBoxShadow;
+            captureArea.style.border = originalBorder;
+            actionBtns.style.display = 'flex';
+            alert("Oops! Couldn't generate the image. Try taking a normal screenshot!");
+        });
+    }
+
+    // --- NATIVE LINK SHARING ---
+    function shareLink() {
+        if (navigator.share) {
+            navigator.share({
+                title: 'AI Fortune Teller',
+                text: 'My destiny is looking bright! Check out your fortune here:',
+                url: window.location.href
+            }).catch(console.error);
+        } else {
+            // Fallback for desktop/unsupported browsers
+            navigator.clipboard.writeText(window.location.href);
+            alert("Link copied to clipboard! Paste it anywhere to share.");
+        }
+    }
+
+    function createHearts() {
+        const container = document.getElementById('heartContainer');
+        for (let i = 0; i < 15; i++) {
+            let heart = document.createElement('div');
+            heart.className = 'heart';
+            heart.innerHTML = '❤';
+            heart.style.left = Math.random() * 100 + 'vw';
+            heart.style.animationDuration = (Math.random() * 3 + 5) + 's';
+            heart.style.animationDelay = Math.random() * 5 + 's';
+            heart.style.fontSize = (Math.random() * 10 + 15) + 'px';
+            container.appendChild(heart);
+        }
+    }
+    createHearts();
+</script>
+</body>
+</html>
