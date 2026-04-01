@@ -133,6 +133,77 @@
         .ticker-wrap { position: absolute; bottom: 15px; left: 0; width: 100%; text-align: center; }
         .ticker-text { font-size: 0.7rem; color: #a39391; opacity: 0; transition: opacity 0.5s ease-in-out; font-weight: 500; }
         .ticker-text.visible { opacity: 1; }
+
+        /* --- NEW FOOTER & MODAL STYLES --- */
+        footer {
+            text-align: center;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.5);
+            backdrop-filter: blur(5px);
+            border-top: 1px solid rgba(255, 179, 193, 0.4);
+            z-index: 10;
+            position: relative;
+        }
+
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-bottom: 10px;
+        }
+
+        .footer-links a {
+            color: var(--primary);
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-decoration: none;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .footer-links a:hover { color: #c9184a; text-decoration: underline; }
+        .footer-text { font-size: 0.7rem; color: #a39391; margin: 0; }
+
+        /* Modal Overlay */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255, 240, 243, 0.8);
+            backdrop-filter: blur(10px);
+            display: none; justify-content: center; align-items: center;
+            z-index: 1000; opacity: 0; transition: opacity 0.3s ease;
+        }
+
+        .modal-overlay.active { display: flex; opacity: 1; }
+
+        .modal-content {
+            background: white; width: 90%; max-width: 500px; max-height: 80vh;
+            border-radius: 25px; padding: 30px; box-shadow: 0 20px 50px rgba(255, 77, 109, 0.2);
+            border: 2px solid var(--primary-light); position: relative;
+            transform: translateY(20px); transition: transform 0.3s ease;
+            display: flex; flex-direction: column; text-align: left;
+        }
+
+        .modal-overlay.active .modal-content { transform: translateY(0); }
+
+        .close-btn {
+            position: absolute; top: 15px; right: 20px;
+            background: none; border: none; font-size: 1.8rem;
+            color: var(--primary); cursor: pointer; transition: 0.2s;
+        }
+
+        .close-btn:hover { transform: scale(1.1); color: #c9184a; }
+
+        .modal-title { font-family: 'Dancing Script', cursive; color: var(--primary); font-size: 2.2rem; margin-top: 0; margin-bottom: 15px; text-align: center; }
+        .modal-body { overflow-y: auto; font-size: 0.85rem; line-height: 1.6; color: #594e52; padding-right: 10px; }
+        
+        .modal-body h3 { color: var(--primary); font-size: 1rem; margin-top: 20px; margin-bottom: 5px; }
+        .modal-body p { margin-top: 0; }
+        
+        /* Custom Scrollbar for Modal */
+        .modal-body::-webkit-scrollbar { width: 6px; }
+        .modal-body::-webkit-scrollbar-track { background: #fff0f3; border-radius: 10px; }
+        .modal-body::-webkit-scrollbar-thumb { background: var(--primary-light); border-radius: 10px; }
     </style>
 </head>
 <body>
@@ -184,8 +255,7 @@
             
             <div class="action-btns" id="action-buttons">
                 <button class="btn-alt" onclick="resetApp()">Try Another</button>
-                <button class="btn-alt btn-save" onclick="downloadScreenshot()">Save and Share</button>
-                
+                <button class="btn-alt btn-save" onclick="downloadScreenshot()">Save & Share</button>
                 <button class="btn-alt btn-icon" onclick="shareLink()" title="Share Link">
                     <svg viewBox="0 0 24 24">
                         <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
@@ -201,6 +271,27 @@
     </div>
 </main>
 
+<footer>
+    <div class="footer-links">
+        <a href="about.html">About Us</a>
+        <a href="contact.html">Contact</a>
+        <a href="privacy.html">Privacy Policy</a>
+        <a href="terms.html">Terms & Conditions</a>
+    </div>
+    <p class="footer-text">&copy; 2026 Fortune AI Labs. All rights reserved.</p>
+</footer>
+
+
+<div id="infoModal" class="modal-overlay" onclick="closeModalOnOutsideClick(event)">
+    <div class="modal-content">
+        <button class="close-btn" onclick="closeModal()">×</button>
+        <h2 class="modal-title" id="modalTitle">Title</h2>
+        <div class="modal-body" id="modalBody">
+            Content goes here.
+        </div>
+    </div>
+</div>
+
 <script>
     const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbyKgByM66Dae_O-C-uGbPAtLkoSAOSbw71XfRcAgpODKdseZFdFtnjmwY7QXRbddFv4/exec"; 
     let activeModule = "Love";
@@ -211,13 +302,84 @@
         .then(data => userIP = data.ip)
         .catch(() => userIP = Math.random().toString());
 
+    // --- NEW: MODAL LOGIC & PAGE CONTENT ---
+    const pageContent = {
+        about: {
+            title: "About Fortune AI",
+            body: `
+                <p>Welcome to <strong>Fortune AI</strong>, the world's first predictive engine powered by deep neural networking and localized synaptic resonance.</p>
+                <h3>How It Works</h3>
+                <p>Our proprietary AI model doesn't just guess. It utilizes a complex algorithmic mesh that cross-references your inputted data against vast historical, astrological, and psychological data sets to deliver highly personalized predictive text.</p>
+                <h3>Our Mission</h3>
+                <p>We believe that technology and cosmic alignment are not mutually exclusive. Our mission is to provide you with moments of clarity, inspiration, and joy as you navigate your personal relationships, career, and life path.</p>
+            `
+        },
+        contact: {
+            title: "Contact Us",
+            body: `
+                <p>We love hearing from our users! Whether you have experienced a glitch in the matrix or just want to share a wildly accurate fortune you received, reach out to us.</p>
+                <h3>Email Support</h3>
+                <p><strong>exe.alexsouth@gmail.com</strong><br>Our neural response team typically replies within 24-48 hours.</p>
+                <h3>Corporate Headquarters</h3>
+                <p>Fortune AI Labs<br>3260 College Rd<br>Fairbanks, Alaska, 99709<br>United States</p>
+            `
+        },
+        privacy: {
+            title: "Privacy Policy",
+            body: `
+                <p>At Fortune AI, your privacy and digital security are our absolute highest priorities. We utilize state-of-the-art End-to-End Encryption (E2EE) to ensure your data is safe.</p>
+                <h3>Data Collection & Hashing</h3>
+                <p>When you input your name or a target's name, the text is immediately subjected to secure cryptographic hashing. This allows our AI to process the "vibrational footprint" of the text without storing the raw, unencrypted letters.</p>
+                <h3>Zero-Storage Architecture</h3>
+                <p>We operate on a strict Zero-Storage architecture. The names you enter are temporarily held in the browser's local RAM for the exact 3.5 seconds required for the synaptic analysis to complete. Once your result is rendered, the data is entirely wiped from our servers.</p>
+                <h3>Third-Party Sharing</h3>
+                <p>We absolutely do not sell, rent, or share any personal queries with third-party advertisers, brokers, or external entities. Your destiny is yours alone.</p>
+            `
+        },
+        terms: {
+            title: "Terms & Conditions",
+            body: `
+                <p>By accessing and utilizing the Fortune AI platform, you agree to comply with the following terms:</p>
+                <h3>1. Entertainment Purposes Only</h3>
+                <p>While our algorithms are incredibly advanced, Fortune AI is designed exclusively for entertainment, motivational, and novelty purposes. The fortunes generated should not be interpreted as professional psychological, medical, legal, or financial advice.</p>
+                <h3>2. Daily Usage Limits</h3>
+                <p>To ensure server stability and optimal synaptic processing for all global users, standard access is reasonably limited to a set amount of queries per 24-hour cycle.</p>
+                <h3>3. Limitation of Liability</h3>
+                <p>Fortune AI Labs is not liable for any personal decisions, actions, or pizzas bought as a direct or indirect result of utilizing the predictive text generated by this website.</p>
+            `
+        }
+    };
+
+    function openModal(pageId) {
+        document.getElementById('modalTitle').innerText = pageContent[pageId].title;
+        document.getElementById('modalBody').innerHTML = pageContent[pageId].body;
+        
+        const modal = document.getElementById('infoModal');
+        modal.style.display = 'flex';
+        // Small delay to trigger CSS transition
+        setTimeout(() => modal.classList.add('active'), 10);
+    }
+
+    function closeModal() {
+        const modal = document.getElementById('infoModal');
+        modal.classList.remove('active');
+        setTimeout(() => modal.style.display = 'none', 300);
+    }
+
+    function closeModalOnOutsideClick(event) {
+        if (event.target.id === 'infoModal') {
+            closeModal();
+        }
+    }
+
+
     // --- DAILY LIMIT LOGIC ---
     function checkDailyLimit() {
-     const today = new Date().toDateString();
+        const today = new Date().toDateString();
         let limitData = JSON.parse(localStorage.getItem('fortune_limit')) || { date: today, count: 0 };
         if (limitData.date !== today) { limitData = { date: today, count: 0 }; }
         if (limitData.count >= 5) {
-           alert("✨ The stars need to rest! ✨\n\nYou've reached your limit of 5 fortunes for today. The cosmos will realign tomorrow. Come back then!");
+            alert("✨ The stars need to rest! ✨\n\nYou've reached your limit of 5 fortunes for today. The cosmos will realign tomorrow. Come back then!");
             return false;
         }
         limitData.count++;
@@ -328,7 +490,9 @@
         const t = document.getElementById('targetInput').value.trim();
         
         if(!u || !t) { alert("The AI needs both inputs to calibrate the fortune."); return; }
-        //if(!checkDailyLimit()) return;
+        
+        // Uncomment the line below to re-enable the daily limit!
+        // if(!checkDailyLimit()) return;
 
         const baseSeed = u.toLowerCase() + t.toLowerCase() + activeModule + userIP.split('.').slice(0,2).join('.');
         
@@ -389,7 +553,7 @@
         document.getElementById('loading-text').innerText = "Calibrating Synaptic Vibe-Sync...";
     }
 
-    // --- INSTAGRAM STORY SCREENSHOT (White + Hearts Background) ---
+    // --- INSTAGRAM STORY SCREENSHOT ---
     function downloadScreenshot() {
         const captureArea = document.getElementById('capture-area');
         const actionBtns = document.getElementById('action-buttons');
@@ -437,7 +601,6 @@
                 url: window.location.href
             }).catch(console.error);
         } else {
-            // Fallback for desktop/unsupported browsers
             navigator.clipboard.writeText(window.location.href);
             alert("Link copied to clipboard! Paste it anywhere to share.");
         }
